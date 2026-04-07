@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QKD Protocol Simulator — Interactive Demo</title>
+    <style>
+        :root {
+            --bg-primary: #050810;
+            --bg-secondary: #0d1117;
+            --bg-card: #161b22;
+            --bg-elevated: #1c2128;
+            --border: #30363d;
+            --border-bright: #484f58;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --cyan: #58a6ff;
+            --cyan-bright: #79c0ff;
+            --cyan-glow: rgba(88, 166, 255, 0.4);
+            --orange: #f0883e;
+            --orange-bright: #ffa657;
+            --orange-glow: rgba(240, 136, 62, 0.4);
+            --green: #3fb950;
+            --green-bright: #56d364;
+            --green-glow: rgba(63, 185, 80, 0.4);
+            --red: #f85149;
+            --purple: #a371f7;
+            --purple-glow: rgba(163, 113, 247, 0.4);
+            --alice: #2f81f7;
+            --alice-glow: rgba(47, 129, 247, 0.5);
+            --bob: #238636;
+            --bob-glow: rgba(35, 134, 54, 0.5);
+            --eve: #da3633;
+            --eve-glow: rgba(218, 54, 51, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                linear-gradient(90deg, var(--border) 1px, transparent 1px),
+                linear-gradient(var(--border) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, var(--cyan-glow) 0%, transparent 60%);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--cyan-bright), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Message Panel */
+        .message-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .panel-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .message-input-group {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            letter-spacing: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 4px var(--cyan-glow), inset 0 0 20px rgba(88, 166, 255, 0.1);
+        }
+
+        .input-hint {
+            position: absolute;
+            right: 12px;
+            bottom: -20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border: none;
+            border-radius: 12px;
+            padding: 16px 36px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-start::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--cyan-bright), var(--purple));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--purple-glow);
+        }
+
+        .btn-start:hover::before {
+            opacity: 1;
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-start span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Binary Display */
+        .binary-display {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .binary-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .bit-stream {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            min-height: 28px;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+
+        .bit {
+            display: inline-block;
+            transition: all 0.2s ease;
+            padding: 2px 1px;
+        }
+
+        .bit.highlight { color: var(--cyan-bright); text-shadow: 0 0 10px var(--cyan-glow); }
+        .bit.matched { color: var(--green-bright); }
+        .bit.discarded { color: var(--red); opacity: 0.5; text-decoration: line-through; }
+        .bit.encrypted { color: var(--orange-bright); }
+
+        /* Animation Panel */
+        .animation-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .animation-container {
+            position: relative;
+            height: 340px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        /* Quantum channel background effect */
+        .channel-bg {
+            position: absolute;
+            left: 15%;
+            right: 15%;
+            top: 50%;
+            height: 120px;
+            transform: translateY(-50%);
+            background: linear-gradient(180deg, 
+                transparent 0%, 
+                rgba(88, 166, 255, 0.03) 30%, 
+                rgba(88, 166, 255, 0.08) 50%,
+                rgba(88, 166, 255, 0.03) 70%,
+                transparent 100%
+            );
+            border-radius: 60px;
+            pointer-events: none;
+        }
+
+        /* Entities */
+        .entity {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 2;
+        }
+
+        .entity-box {
+            width: 90px;
+            height: 90px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .entity-box.active {
+            transform: scale(1.15);
+        }
+
+        .entity-box::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 23px;
+            background: linear-gradient(135deg, currentColor, transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .entity-box.active::before {
+            opacity: 0.6;
+            animation: pulse-ring 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.05); opacity: 0.3; }
+        }
+
+        .entity-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+        }
+
+        .entity-sublabel {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .alice-box {
+            background: linear-gradient(135deg, var(--alice), #1f6feb);
+            border: 2px solid var(--alice);
+            color: var(--alice);
+        }
+
+        .alice-box.active {
+            box-shadow: 0 0 40px var(--alice-glow), 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .bob-box {
+            background: linear-gradient(135deg, var(--bob), #2ea043);
+            border: 2px solid var(--bob);
+            color: var(--bob);
+        }
+
+        .bob-box.active {
+            box-shadow: 0 0 40px var(--bob-glow), 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .qkd-box {
+            background: linear-gradient(135deg, var(--purple), #8957e5);
+            border: 2px solid var(--purple);
+            color: var(--purple);
+            width: 70px;
+            height: 70px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .qkd-box.active {
+            box-shadow: 0 0 40px var(--purple-glow), 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .eve-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+
+        .eve-container.visible {
+            opacity: 1;
+            top: 30px;
+        }
+
+        .eve-box {
+            background: linear-gradient(135deg, var(--eve), #b62324);
+            border: 2px dashed var(--eve);
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: eve-shake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes eve-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .eve-label {
+            font-size: 0.75rem;
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        /* Quantum Channel */
+        .channel {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            margin: 0 20px;
+        }
+
+        .channel-wire {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--alice), var(--cyan), var(--bob));
+            border-radius: 3px;
+            position: relative;
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .channel-wire::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            background-size: 100px 100%;
+            animation: channel-flow 2s linear infinite;
+        }
+
+        @keyframes channel-flow {
+            0% { background-position: -100px 0; }
+            100% { background-position: calc(100% + 100px) 0; }
+        }
+
+        /* Photon particles */
+        .photon {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+        }
+
+        .photon::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.4;
+            filter: blur(4px);
+        }
+
+        .photon::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 2px;
+            left: -7px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.6;
+        }
+
+        .photon.z-basis { 
+            background: var(--cyan); 
+            color: var(--cyan);
+            box-shadow: 0 0 15px var(--cyan-glow);
+        }
+        .photon.x-basis { 
+            background: var(--orange); 
+            color: var(--orange);
+            box-shadow: 0 0 15px var(--orange-glow);
+        }
+        .photon.y-basis { 
+            background: var(--green); 
+            color: var(--green);
+            box-shadow: 0 0 15px var(--green-glow);
+        }
+
+        /* Photon with polarization indicator */
+        .photon-polarization {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--bg-primary);
+        }
+
+        /* Step Info Panel */
+        .step-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .step-label {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            text-align: center;
+            min-width: 320px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Key Display */
+        .key-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 24px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .key-display.visible { opacity: 1; }
+
+        .key-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+            min-width: 180px;
+        }
+
+        .key-box-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .key-bits {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--green-bright);
+            letter-spacing: 2px;
+            word-break: break-all;
+        }
+
+        /* Cipher Display */
+        .cipher-display {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .cipher-display.visible { opacity: 1; }
+
+        .cipher-text {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--orange-bright);
+            letter-spacing: 2px;
+            word-break: break-all;
+        }
+
+        /* Message traveling animation */
+        .message-packet {
+            position: absolute;
+            background: var(--bg-elevated);
+            border: 2px solid var(--orange);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--orange-bright);
+            white-space: nowrap;
+            box-shadow: 0 0 20px var(--orange-glow);
+            z-index: 6;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .message-packet.visible {
+            opacity: 1;
+        }
+
+        /* Controls Panel */
+        .controls-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .control-group {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .control-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .control-value {
+            font-family: 'SF Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: var(--bg-card);
+            border-radius: 4px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .slider:hover {
+            background: var(--bg-elevated);
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--cyan-glow);
+            transition: transform 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Protocol Selector */
+        .protocol-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .protocol-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .protocol-btn:hover {
+            border-color: var(--border-bright);
+            color: var(--text-primary);
+        }
+
+        .protocol-btn.active {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px var(--purple-glow);
+        }
+
+        /* Metrics Panel */
+        .metrics-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+        }
+
+        .metric-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'SF Mono', monospace;
+            letter-spacing: -1px;
+        }
+
+        .metric-value.good { color: var(--green-bright); }
+        .metric-value.warning { color: var(--orange-bright); }
+        .metric-value.bad { color: var(--red); }
+
+        .metric-unit {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Comparison Bar */
+        .comparison-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .bar-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            min-width: 55px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .bar-container {
+            flex: 1;
+            height: 28px;
+            background: var(--bg-card);
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            position: absolute;
+        }
+
+        .bar-fill.cv { 
+            background: linear-gradient(90deg, var(--orange), var(--orange-bright));
+            left: 50%; 
+            border-radius: 0 14px 14px 0;
+        }
+        .bar-fill.dv { 
+            background: linear-gradient(90deg, var(--cyan-bright), var(--cyan));
+            right: 50%;
+            border-radius: 14px 0 0 14px;
+        }
+
+        .bar-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--text-muted);
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        /* Progress indicator */
+        .progress-track {
+            display: flex;
+            gap: 4px;
+            margin-top: 24px;
+            justify-content: center;
+        }
+
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .progress-dot.complete {
+            background: var(--green);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            h1 { font-size: 1.6rem; }
+            .animation-container { height: 280px; }
+            .entity-box { width: 70px; height: 70px; font-size: 24px; }
+            .qkd-box { width: 55px; height: 55px; font-size: 11px; }
+            .message-input-group { flex-direction: column; }
+            .metrics-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Quantum Key Distribution Simulator</h1>
+            <p class="subtitle">Experience secure quantum communication with DV-QKD and CV-QKD protocols</p>
+        </header>
+
+        <!-- Message Panel -->
+        <div class="message-panel">
+            <div class="panel-header">
+                <div class="panel-icon">&#128274;</div>
+                <div class="panel-title">Secure Message Transmission</div>
+            </div>
+            <div class="message-input-group">
+                <div class="input-wrapper">
+                    <input type="text" 
+                           id="messageInput" 
+                           class="message-input" 
+                           value="QUANTUM SECURE" 
+                           maxlength="20"
+                           placeholder="Enter your secret message">
+                    <span class="input-hint">Max 20 characters</span>
+                </div>
+                <button id="startBtn" class="btn-start"><span>Start QKD Protocol</span></button>
+            </div>
+            <div class="binary-display">
+                <div class="binary-label">Message Binary Encoding</div>
+                <div class="bit-stream" id="bitStream">Ready to encode message...</div>
+            </div>
+        </div>
+
+        <!-- Animation Canvas -->
+        <div class="animation-panel">
+            <div class="animation-container" id="animationContainer">
+                <!-- Channel background effect -->
+                <div class="channel-bg"></div>
+
+                <!-- Alice -->
+                <div class="entity">
+                    <div class="entity-box alice-box" id="aliceBox">&#128100;</div>
+                    <span class="entity-label">Alice</span>
+                    <span class="entity-sublabel">Sender</span>
+                </div>
+
+                <!-- QKD Key Gen -->
+                <div class="entity">
+                    <div class="entity-box qkd-box" id="qkdGenBox">QKD<br/>TX</div>
+                    <span class="entity-label">Transmitter</span>
+                </div>
+
+                <!-- Quantum Channel -->
+                <div class="channel" id="quantumChannel">
+                    <div class="channel-wire"></div>
+                </div>
+
+                <!-- QKD Key Rec -->
+                <div class="entity">
+                    <div class="entity-box qkd-box" id="qkdRecBox">QKD<br/>RX</div>
+                    <span class="entity-label">Receiver</span>
+                </div>
+
+                <!-- Bob -->
+                <div class="entity">
+                    <div class="entity-box bob-box" id="bobBox">&#128100;</div>
+                    <span class="entity-label">Bob</span>
+                    <span class="entity-sublabel">Receiver</span>
+                </div>
+
+                <!-- Eve (eavesdropper) -->
+                <div class="eve-container" id="eveContainer">
+                    <div class="eve-box">&#128065;</div>
+                    <span class="eve-label">Eve (Eavesdropper)</span>
+                </div>
+
+                <!-- Message packet for animation -->
+                <div class="message-packet" id="messagePacket"></div>
+
+                <!-- Key Display -->
+                <div class="key-display" id="keyDisplay">
+                    <div class="key-box">
+                        <div class="key-box-label">Alice's Secret Key</div>
+                        <div class="key-bits" id="aliceKey">----------------</div>
+                    </div>
+                    <div class="key-box">
+                        <div class="key-box-label">Bob's Secret Key</div>
+                        <div class="key-bits" id="bobKey">----------------</div>
+                    </div>
+                </div>
+
+                <!-- Cipher Display -->
+                <div class="cipher-display" id="cipherDisplay">
+                    <div class="key-box-label">Encrypted Ciphertext</div>
+                    <div class="cipher-text" id="cipherText">----------------</div>
+                </div>
+
+                <!-- Step Info -->
+                <div class="step-info">
+                    <div class="step-number" id="stepNumber">Step 0 of 8</div>
+                    <div class="step-label" id="stepLabel">Click "Start QKD Protocol" to begin secure transmission</div>
+                </div>
+            </div>
+
+            <!-- Progress indicator -->
+            <div class="progress-track" id="progressTrack">
+                <div class="progress-dot" data-step="0"></div>
+                <div class="progress-dot" data-step="1"></div>
+                <div class="progress-dot" data-step="2"></div>
+                <div class="progress-dot" data-step="3"></div>
+                <div class="progress-dot" data-step="4"></div>
+                <div class="progress-dot" data-step="5"></div>
+                <div class="progress-dot" data-step="6"></div>
+                <div class="progress-dot" data-step="7"></div>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="control-group">
+                <div class="control-label">
+                    <span class="control-name">Channel Loss</span>
+                    <span class="control-value"><span id="lossValue">6.0</span> dB (<span id="distValue">30</span> km fiber)</span>
+                </div>
+                <input type="range" class="slider" id="lossSlider" min="0" max="30" step="0.5" value="6">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span class="control-name">Thermal Noise N<sub>Th</sub></span>
+                    <span class="control-value" id="thermalValue">10<sup>-3</sup></span>
+                </div>
+                <input type="range" class="slider" id="thermalSlider" min="-6" max="-1" step="0.5" value="-3">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span class="control-name">Phase Noise &#963;<sub>&#952;</sub><sup>2</sup></span>
+                    <span class="control-value" id="phaseValue">10<sup>-4</sup></span>
+                </div>
+                <input type="range" class="slider" id="phaseSlider" min="-8" max="0" step="0.5" value="-4">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span class="control-name">QKD Protocol</span>
+                </div>
+                <div class="protocol-selector">
+                    <button class="protocol-btn" data-protocol="BB84">BB84</button>
+                    <button class="protocol-btn active" data-protocol="6S">Six-State</button>
+                    <button class="protocol-btn" data-protocol="SqzHom">Squeezed</button>
+                    <button class="protocol-btn" data-protocol="compare">Compare</button>
+                </div>
+            </div>
+
+            <div class="control-group" id="squeezingControl" style="display: none;">
+                <div class="control-label">
+                    <span class="control-name">Squeezing Level</span>
+                    <span class="control-value"><span id="sqzValue">15</span> dB</span>
+                </div>
+                <input type="range" class="slider" id="sqzSlider" min="0" max="20" step="1" value="15">
+            </div>
+        </div>
+
+        <!-- Metrics Panel -->
+        <div class="metrics-panel">
+            <div class="metric-card">
+                <div class="metric-title">Secret Key Rate</div>
+                <div class="metric-value good" id="keyRateValue">0.0832</div>
+                <div class="metric-unit">bits per channel use</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Quantum Bit Error Rate</div>
+                <div class="metric-value good" id="qberValue">0.12</div>
+                <div class="metric-unit">% error rate</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-title">Protocol Performance Comparison</div>
+                <div class="comparison-bar">
+                    <span class="bar-label">6-State</span>
+                    <div class="bar-container">
+                        <div class="bar-fill dv" id="dvBar" style="width: 25%;"></div>
+                        <div class="bar-fill cv" id="cvBar" style="width: 25%;"></div>
+                        <div class="bar-center"></div>
+                    </div>
+                    <span class="bar-label">Sqz-Hom</span>
+                </div>
+                <div class="metric-unit" id="comparisonLabel">6-State: 0.083 bits/use | Sqz-Hom: 0.091 bits/use</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // QKD Physics Functions
+        // =====================================================================
+
+        function h(x) {
+            x = Math.max(1e-15, Math.min(1 - 1e-15, x));
+            return -x * Math.log2(x) - (1 - x) * Math.log2(1 - x);
+        }
+
+        function H(x) {
+            x = Math.max(1e-15, x);
+            return -x * Math.log2(x);
+        }
+
+        function G(x) {
+            x = Math.max(1e-15, x);
+            return (x + 1) * Math.log2(x + 1) - x * Math.log2(x);
+        }
+
+        function dB_to_eta(loss_dB) {
+            return Math.pow(10, -loss_dB / 10);
+        }
+
+        function gamma_fn(eta, NTh) {
+            return 1 + NTh - NTh * eta;
+        }
+
+        function depolarizing_lambda(eta, NTh) {
+            const num = 2 * NTh * (1 + NTh) * Math.pow(1 - eta, 2);
+            const den = Math.max(1e-15, eta + num);
+            return Math.min(1, Math.max(0, num / den));
+        }
+
+        function QBER_thermal(eta, NTh) {
+            return depolarizing_lambda(eta, NTh) / 2;
+        }
+
+        function PS_thermal(eta, NTh) {
+            const g = Math.pow(gamma_fn(eta, NTh), 4);
+            const num = eta + 2 * NTh * (1 + NTh) * Math.pow(1 - eta, 2);
+            return Math.min(1, Math.max(0, num / Math.max(1e-15, g)));
+        }
+
+        function keyRate_BB84(eta, NTh) {
+            const PS = PS_thermal(eta, NTh);
+            const Q = QBER_thermal(eta, NTh);
+            return Math.max(0, PS / 2 * (1 - 2 * h(Q)));
+        }
+
+        function keyRate_6S(eta, NTh) {
+            const PS = PS_thermal(eta, NTh);
+            const Q = QBER_thermal(eta, NTh);
+            const L00 = Math.max(1e-15, 1 - 1.5 * Q);
+            const L01 = Math.max(1e-15, Q / 2);
+            const entropySum = H(L00) + 3 * H(L01);
+            return Math.max(0, PS / 2 * (1 - entropySum));
+        }
+
+        function r_bar(sigma2) {
+            return Math.exp(-sigma2 / 2);
+        }
+
+        function keyRate_6S_phase(eta, NTh, sigma2) {
+            const lam = depolarizing_lambda(eta, NTh);
+            const r2 = Math.pow(r_bar(sigma2), 2);
+            const PS = PS_thermal(eta, NTh);
+            
+            const QZ = lam / 2;
+            const QXY = 0.5 * ((1 - lam) * (1 - r2) + lam);
+            
+            const L00 = Math.max(1e-15, 1 - (QXY + QXY + QZ) / 2);
+            const L01 = Math.max(1e-15, (QXY + QXY - QZ) / 2);
+            const L10 = Math.max(1e-15, QZ / 2);
+            const L11 = Math.max(1e-15, QZ / 2);
+            
+            const entropySum = H(L00) + H(L01) + H(L10) + H(L11);
+            return Math.max(0, PS / 2 * (1 - entropySum));
+        }
+
+        function keyRate_SqzHom(eta, NTh, Vsq_dB = 15) {
+            const Vsq = Math.pow(10, -Vsq_dB / 10);
+            const mu = 1 / Vsq;
+            const VA = mu - 1;
+            
+            const chi = (1 - eta) * (2 * NTh + 1) / Math.max(1e-15, eta);
+            const VB = eta * (VA + 1 + chi);
+            const c = Math.sqrt(eta * (VA * VA + 2 * VA));
+            
+            const a = VA + 1;
+            const b = VB;
+            const VB_given_A = Math.max(1e-15, b - (c * c) / Math.max(1e-15, a));
+            
+            const I_AB = 0.5 * Math.log2(VB / VB_given_A);
+            
+            const det_A = a * a;
+            const det_B = b * b;
+            const det_C = c * c;
+            const Delta = det_A + det_B - 2 * det_C;
+            const D_sq = Math.pow(a * b - det_C, 2);
+            const disc = Math.max(0, Delta * Delta - 4 * D_sq);
+            
+            const lambda1 = Math.sqrt(Math.max(1e-15, 0.5 * (Delta + Math.sqrt(disc))));
+            const lambda2 = Math.sqrt(Math.max(1e-15, 0.5 * (Delta - Math.sqrt(disc))));
+            
+            const S_AB = G((lambda1 - 1) / 2) + G((lambda2 - 1) / 2);
+            
+            const denom = eta * mu + (1 - eta) * (2 * NTh + 1);
+            const lambda3_x = mu - eta * (mu * mu - 1) / Math.max(1e-15, denom);
+            const lambda3 = Math.sqrt(Math.max(1e-15, lambda3_x * mu));
+            const S_E_given_B = G((lambda3 - 1) / 2);
+            
+            const chi_EB = S_AB - S_E_given_B;
+            return Math.max(0, I_AB - chi_EB);
+        }
+
+        function keyRate_SqzHom_phase(eta, NTh, sigma2, Vsq_dB = 15) {
+            const Vsq = Math.pow(10, -Vsq_dB / 10);
+            const mu = 1 / Vsq;
+            const r2 = Math.exp(-sigma2);
+            
+            const eta_I = Math.max(1e-15, eta * r2);
+            const r_factor = Math.sqrt(r2);
+            
+            const VB = eta * mu + (1 - eta) * (2 * NTh + 1);
+            const c = r_factor * Math.sqrt(eta * (mu * mu - 1));
+            
+            const a = mu;
+            const b = VB;
+            const VB_given_A = Math.max(1e-15, b - (c * c) / Math.max(1e-15, a));
+            
+            const I_AB = 0.5 * Math.log2(VB / VB_given_A);
+            
+            const det_A = a * a;
+            const det_B = b * b;
+            const det_C = c * c;
+            const Delta = det_A + det_B - 2 * det_C;
+            const D_sq = Math.pow(a * b - det_C, 2);
+            const disc = Math.max(0, Delta * Delta - 4 * D_sq);
+            
+            const lambda1 = Math.sqrt(Math.max(1e-15, 0.5 * (Delta + Math.sqrt(disc))));
+            const lambda2 = Math.sqrt(Math.max(1e-15, 0.5 * (Delta - Math.sqrt(disc))));
+            
+            const S_AB = G((lambda1 - 1) / 2) + G((lambda2 - 1) / 2);
+            
+            const chi_I = ((1 - r2) * eta * mu + (1 - eta) * (2 * NTh + 1)) / eta_I;
+            const denom = eta_I * mu + (1 - eta_I) * (2 * NTh + 1) + chi_I * eta_I;
+            const lambda3_x = mu - eta_I * (mu * mu - 1) / Math.max(1e-15, denom);
+            const lambda3 = Math.sqrt(Math.max(1e-15, lambda3_x * mu));
+            const S_E_given_B = G((lambda3 - 1) / 2);
+            
+            const chi_EB = S_AB - S_E_given_B;
+            return Math.max(0, I_AB - chi_EB);
+        }
+
+        // =====================================================================
+        // UI State and Controls
+        // =====================================================================
+
+        let state = {
+            loss_dB: 6,
+            NTh: 1e-3,
+            sigma2: 1e-4,
+            sqz_dB: 15,
+            protocol: '6S',
+            isAnimating: false,
+            currentStep: 0
+        };
+
+        const elements = {
+            messageInput: document.getElementById('messageInput'),
+            startBtn: document.getElementById('startBtn'),
+            bitStream: document.getElementById('bitStream'),
+            lossSlider: document.getElementById('lossSlider'),
+            lossValue: document.getElementById('lossValue'),
+            distValue: document.getElementById('distValue'),
+            thermalSlider: document.getElementById('thermalSlider'),
+            thermalValue: document.getElementById('thermalValue'),
+            phaseSlider: document.getElementById('phaseSlider'),
+            phaseValue: document.getElementById('phaseValue'),
+            sqzSlider: document.getElementById('sqzSlider'),
+            sqzValue: document.getElementById('sqzValue'),
+            squeezingControl: document.getElementById('squeezingControl'),
+            keyRateValue: document.getElementById('keyRateValue'),
+            qberValue: document.getElementById('qberValue'),
+            dvBar: document.getElementById('dvBar'),
+            cvBar: document.getElementById('cvBar'),
+            comparisonLabel: document.getElementById('comparisonLabel'),
+            stepLabel: document.getElementById('stepLabel'),
+            stepNumber: document.getElementById('stepNumber'),
+            aliceBox: document.getElementById('aliceBox'),
+            bobBox: document.getElementById('bobBox'),
+            qkdGenBox: document.getElementById('qkdGenBox'),
+            qkdRecBox: document.getElementById('qkdRecBox'),
+            eveContainer: document.getElementById('eveContainer'),
+            keyDisplay: document.getElementById('keyDisplay'),
+            aliceKey: document.getElementById('aliceKey'),
+            bobKey: document.getElementById('bobKey'),
+            cipherDisplay: document.getElementById('cipherDisplay'),
+            cipherText: document.getElementById('cipherText'),
+            quantumChannel: document.getElementById('quantumChannel'),
+            messagePacket: document.getElementById('messagePacket'),
+            progressTrack: document.getElementById('progressTrack')
+        };
+
+        // Protocol buttons
+        document.querySelectorAll('.protocol-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.protocol-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.protocol = btn.dataset.protocol;
+                
+                elements.squeezingControl.style.display = 
+                    (state.protocol === 'SqzHom' || state.protocol === 'compare') ? 'block' : 'none';
+                
+                updateMetrics();
+            });
+        });
+
+        // Sliders
+        elements.lossSlider.addEventListener('input', (e) => {
+            state.loss_dB = parseFloat(e.target.value);
+            elements.lossValue.textContent = state.loss_dB.toFixed(1);
+            elements.distValue.textContent = Math.round(state.loss_dB / 0.2);
+            updateMetrics();
+        });
+
+        elements.thermalSlider.addEventListener('input', (e) => {
+            const exp = parseFloat(e.target.value);
+            state.NTh = Math.pow(10, exp);
+            elements.thermalValue.innerHTML = `10<sup>${exp}</sup>`;
+            updateMetrics();
+        });
+
+        elements.phaseSlider.addEventListener('input', (e) => {
+            const exp = parseFloat(e.target.value);
+            state.sigma2 = Math.pow(10, exp);
+            elements.phaseValue.innerHTML = `10<sup>${exp}</sup>`;
+            updateMetrics();
+        });
+
+        elements.sqzSlider.addEventListener('input', (e) => {
+            state.sqz_dB = parseInt(e.target.value);
+            elements.sqzValue.textContent = state.sqz_dB;
+            updateMetrics();
+        });
+
+        function updateMetrics() {
+            const eta = dB_to_eta(state.loss_dB);
+            
+            let keyRate, qber;
+            const K_6S = keyRate_6S_phase(eta, state.NTh, state.sigma2);
+            const K_SqzHom = keyRate_SqzHom_phase(eta, state.NTh, state.sigma2, state.sqz_dB);
+            
+            switch (state.protocol) {
+                case 'BB84':
+                    keyRate = keyRate_BB84(eta, state.NTh);
+                    break;
+                case '6S':
+                    keyRate = K_6S;
+                    break;
+                case 'SqzHom':
+                    keyRate = K_SqzHom;
+                    break;
+                case 'compare':
+                    keyRate = Math.max(K_6S, K_SqzHom);
+                    break;
+            }
+            qber = QBER_thermal(eta, state.NTh) * 100;
+
+            elements.keyRateValue.textContent = keyRate > 0 ? keyRate.toFixed(4) : '0';
+            elements.keyRateValue.className = 'metric-value ' + 
+                (keyRate > 0.01 ? 'good' : keyRate > 0.001 ? 'warning' : 'bad');
+
+            elements.qberValue.textContent = qber.toFixed(2);
+            elements.qberValue.className = 'metric-value ' + 
+                (qber < 5 ? 'good' : qber < 11 ? 'warning' : 'bad');
+
+            const maxK = Math.max(K_6S, K_SqzHom, 1e-10);
+            const dvWidth = (K_6S / maxK) * 50;
+            const cvWidth = (K_SqzHom / maxK) * 50;
+            
+            elements.dvBar.style.width = dvWidth + '%';
+            elements.cvBar.style.width = cvWidth + '%';
+            elements.comparisonLabel.textContent = 
+                `6-State: ${K_6S.toFixed(4)} bits/use | Sqz-Hom: ${K_SqzHom.toFixed(4)} bits/use`;
+        }
+
+        // =====================================================================
+        // Animation System
+        // =====================================================================
+
+        const STEPS = [
+            { name: 'Encoding', label: 'Alice converts her secret message into binary quantum states', duration: 2500 },
+            { name: 'Key Generation', label: 'QKD transmitter prepares random polarization bases for each qubit', duration: 2000 },
+            { name: 'Quantum Transmission', label: 'Single photons traverse the quantum channel carrying encoded information', duration: 4000 },
+            { name: 'Eavesdropping Detection', label: 'Any measurement by Eve disturbs quantum states - detected via error rates', duration: 2500 },
+            { name: 'Basis Reconciliation', label: 'Alice and Bob publicly compare bases, keeping only matching measurements', duration: 2500 },
+            { name: 'Key Establishment', label: 'Shared secret key established through privacy amplification', duration: 2000 },
+            { name: 'One-Time Pad Encryption', label: 'Message XORed with secret key creates unbreakable ciphertext', duration: 2500 },
+            { name: 'Secure Decryption', label: 'Bob decrypts using identical key - information-theoretic security achieved', duration: 2500 }
+        ];
+
+        let photons = [];
+
+        function textToBinary(text) {
+            return text.split('').map(char => 
+                char.charCodeAt(0).toString(2).padStart(8, '0')
+            ).join('');
+        }
+
+        function binaryToText(binary) {
+            let text = '';
+            for (let i = 0; i < binary.length; i += 8) {
+                const byte = binary.substr(i, 8);
+                if (byte.length === 8) {
+                    text += String.fromCharCode(parseInt(byte, 2));
+                }
+            }
+            return text;
+        }
+
+        function generateRandomKey(length) {
+            let key = '';
+            for (let i = 0; i < length; i++) {
+                key += Math.random() > 0.5 ? '1' : '0';
+            }
+            return key;
+        }
+
+        function xorStrings(a, b) {
+            let result = '';
+            for (let i = 0; i < Math.min(a.length, b.length); i++) {
+                result += a[i] === b[i] ? '0' : '1';
+            }
+            return result;
+        }
+
+        function updateProgressDots(currentStep, complete = false) {
+            const dots = elements.progressTrack.querySelectorAll('.progress-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.remove('active', 'complete');
+                if (i < currentStep) {
+                    dot.classList.add('complete');
+                } else if (i === currentStep && !complete) {
+                    dot.classList.add('active');
+                } else if (complete) {
+                    dot.classList.add('complete');
+                }
+            });
+        }
+
+        async function startAnimation() {
+            if (state.isAnimating) return;
+            state.isAnimating = true;
+            elements.startBtn.disabled = true;
+
+            const message = elements.messageInput.value.toUpperCase() || 'QUANTUM SECURE';
+            const binary = textToBinary(message);
+            const keyLength = binary.length;
+            const secretKey = generateRandomKey(keyLength);
+            
+            // Reset displays
+            elements.keyDisplay.classList.remove('visible');
+            elements.cipherDisplay.classList.remove('visible');
+            elements.eveContainer.classList.remove('visible');
+            elements.messagePacket.classList.remove('visible');
+            clearPhotons();
+            updateProgressDots(-1);
+
+            // Step 1: Alice Encodes
+            await runStep(0);
+            elements.aliceBox.classList.add('active');
+            await displayBitStream(binary, 'highlight', 30);
+            await sleep(500);
+            elements.aliceBox.classList.remove('active');
+
+            // Step 2: Key Generation
+            await runStep(1);
+            elements.qkdGenBox.classList.add('active');
+            await animateBasisGeneration();
+            await sleep(500);
+            elements.qkdGenBox.classList.remove('active');
+
+            // Step 3: Quantum Transmission
+            await runStep(2);
+            await animatePhotonStream(Math.min(binary.length, 24));
+
+            // Step 4: Eve Attempt
+            await runStep(3);
+            elements.eveContainer.classList.add('visible');
+            await sleep(1500);
+            // Show detection
+            elements.stepLabel.textContent = 'Anomalous error rate detected! Eve\'s presence revealed by quantum mechanics.';
+            await sleep(1500);
+            elements.eveContainer.classList.remove('visible');
+
+            // Step 5: Sifting
+            await runStep(4);
+            elements.qkdRecBox.classList.add('active');
+            elements.qkdGenBox.classList.add('active');
+            await animateBasisComparison();
+            await sleep(500);
+            elements.qkdRecBox.classList.remove('active');
+            elements.qkdGenBox.classList.remove('active');
+
+            // Step 6: Secret Key
+            await runStep(5);
+            elements.keyDisplay.classList.add('visible');
+            const displayKey = secretKey.length > 32 ? secretKey.substring(0, 32) + '...' : secretKey;
+            await animateKeyReveal(elements.aliceKey, displayKey);
+            await animateKeyReveal(elements.bobKey, displayKey);
+            await sleep(1000);
+
+            // Step 7: Encryption
+            await runStep(6);
+            elements.aliceBox.classList.add('active');
+            const cipher = xorStrings(binary, secretKey);
+            elements.cipherDisplay.classList.add('visible');
+            const displayCipher = cipher.length > 40 ? cipher.substring(0, 40) + '...' : cipher;
+            await animateEncryption(displayCipher);
+            
+            // Animate cipher packet traveling
+            await animateMessagePacket('ENCRYPTED', 'alice', 'bob');
+            elements.aliceBox.classList.remove('active');
+
+            // Step 8: Decryption
+            await runStep(7);
+            elements.bobBox.classList.add('active');
+            await sleep(1000);
+            
+            // Reveal decrypted message
+            elements.bitStream.innerHTML = '';
+            const decryptedSpan = document.createElement('span');
+            decryptedSpan.style.cssText = 'color: var(--green-bright); font-size: 1.4rem; font-weight: 600; text-shadow: 0 0 20px var(--green-glow);';
+            decryptedSpan.textContent = message;
+            elements.bitStream.appendChild(decryptedSpan);
+            
+            await sleep(1500);
+            elements.bobBox.classList.remove('active');
+
+            // Complete
+            updateProgressDots(8, true);
+            elements.stepNumber.textContent = 'Complete!';
+            elements.stepLabel.innerHTML = `<span style="color: var(--green-bright);">&#10003;</span> Quantum-secure transmission successful! Message "${message}" delivered with information-theoretic security.`;
+            state.isAnimating = false;
+            elements.startBtn.disabled = false;
+        }
+
+        async function runStep(stepIndex) {
+            const step = STEPS[stepIndex];
+            elements.stepNumber.textContent = `Step ${stepIndex + 1} of 8`;
+            elements.stepLabel.textContent = step.label;
+            updateProgressDots(stepIndex);
+            state.currentStep = stepIndex;
+        }
+
+        async function displayBitStream(bits, className, delay = 50) {
+            elements.bitStream.innerHTML = '';
+            const displayBits = bits.length > 64 ? bits.substring(0, 64) : bits;
+            
+            for (let i = 0; i < displayBits.length; i++) {
+                await sleep(delay);
+                const span = document.createElement('span');
+                span.className = `bit ${className}`;
+                span.textContent = displayBits[i];
+                
+                // Add byte separator every 8 bits
+                if (i > 0 && i % 8 === 0) {
+                    const separator = document.createElement('span');
+                    separator.textContent = ' ';
+                    separator.style.width = '8px';
+                    separator.style.display = 'inline-block';
+                    elements.bitStream.appendChild(separator);
+                }
+                
+                elements.bitStream.appendChild(span);
+            }
+            
+            if (bits.length > 64) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.style.color = 'var(--text-muted)';
+                elements.bitStream.appendChild(ellipsis);
+            }
+        }
+
+        async function animateBasisGeneration() {
+            const bases = ['Z', 'X', 'Z', 'X', 'Z', 'Z', 'X', 'Z'];
+            elements.bitStream.innerHTML = '<span style="color: var(--text-muted);">Bases: </span>';
+            
+            for (let i = 0; i < bases.length; i++) {
+                await sleep(150);
+                const span = document.createElement('span');
+                span.style.cssText = bases[i] === 'Z' 
+                    ? 'color: var(--cyan); margin: 0 2px;' 
+                    : 'color: var(--orange); margin: 0 2px;';
+                span.textContent = `[${bases[i]}]`;
+                elements.bitStream.appendChild(span);
+            }
+            
+            const more = document.createElement('span');
+            more.style.color = 'var(--text-muted)';
+            more.textContent = ' ...';
+            elements.bitStream.appendChild(more);
+        }
+
+        async function animateBasisComparison() {
+            elements.bitStream.innerHTML = '';
+            const matches = ['&#10003;', '&#10007;', '&#10003;', '&#10003;', '&#10007;', '&#10003;', '&#10007;', '&#10003;'];
+            
+            for (let i = 0; i < matches.length; i++) {
+                await sleep(200);
+                const span = document.createElement('span');
+                const isMatch = matches[i] === '&#10003;';
+                span.style.cssText = isMatch 
+                    ? 'color: var(--green-bright); margin: 0 4px; font-size: 1.2rem;' 
+                    : 'color: var(--red); margin: 0 4px; font-size: 1.2rem; opacity: 0.5;';
+                span.innerHTML = matches[i];
+                elements.bitStream.appendChild(span);
+            }
+        }
+
+        async function animateKeyReveal(element, key) {
+            let display = '';
+            for (let i = 0; i < key.length; i++) {
+                await sleep(40);
+                display += key[i];
+                element.textContent = display;
+            }
+        }
+
+        async function animateEncryption(cipher) {
+            let display = '';
+            for (let i = 0; i < cipher.length; i++) {
+                await sleep(30);
+                display += cipher[i];
+                elements.cipherText.textContent = display;
+            }
+        }
+
+        async function animateMessagePacket(text, from, to) {
+            const packet = elements.messagePacket;
+            packet.textContent = text;
+            packet.style.top = '50%';
+            packet.style.transform = 'translateY(-50%)';
+            
+            if (from === 'alice') {
+                packet.style.left = '10%';
+            }
+            
+            packet.classList.add('visible');
+            
+            // Animate across
+            let pos = 10;
+            const targetPos = 85;
+            const speed = 1.5;
+            
+            while (pos < targetPos) {
+                pos += speed;
+                packet.style.left = pos + '%';
+                await sleep(20);
+            }
+            
+            packet.classList.remove('visible');
+        }
+
+        function createPhoton(basis, bit) {
+            const channel = elements.quantumChannel;
+            const photon = document.createElement('div');
+            photon.className = `photon ${basis}-basis`;
+            photon.style.left = '0%';
+            
+            // Add polarization indicator
+            const pol = document.createElement('div');
+            pol.className = 'photon-polarization';
+            pol.textContent = bit;
+            photon.appendChild(pol);
+            
+            channel.appendChild(photon);
+            return photon;
+        }
+
+        async function animatePhotonStream(count) {
+            const bases = ['z', 'x', 'z', 'x', 'y', 'z', 'x', 'z'];
+            
+            for (let i = 0; i < count; i++) {
+                const basis = bases[i % bases.length];
+                const bit = Math.random() > 0.5 ? '1' : '0';
+                const photon = createPhoton(basis, bit);
+                photons.push(photon);
+                
+                // Animate photon across channel
+                let pos = 0;
+                const speed = 2 + Math.random() * 1;
+                
+                const animate = async () => {
+                    while (pos < 100) {
+                        pos += speed;
+                        photon.style.left = pos + '%';
+                        
+                        // Add noise wobble based on parameters
+                        if (state.sigma2 > 1e-4) {
+                            const wobble = (Math.random() - 0.5) * 15 * Math.sqrt(state.sigma2);
+                            photon.style.transform = `translateY(calc(-50% + ${wobble}px))`;
+                        }
+                        
+                        await sleep(25);
+                    }
+                    
+                    photon.remove();
+                    photons = photons.filter(p => p !== photon);
+                };
+                
+                // Start animation but don't wait for it to complete
+                animate();
+                
+                // Stagger the next photon
+                await sleep(120);
+            }
+            
+            // Wait for all photons to finish
+            await sleep(1500);
+        }
+
+        function clearPhotons() {
+            photons.forEach(p => p.remove());
+            photons = [];
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        elements.startBtn.addEventListener('click', startAnimation);
+
+        // Initialize
+        updateMetrics();
+    </script>
+</body>
+</html>
