@@ -77,12 +77,12 @@ export default function QKDSimulator() {
             <div className="rounded-xl border border-white/10 bg-[#0d1117] p-4">
               <h3 className="text-xs font-semibold text-white mb-1.5">Interactive Visual Demo</h3>
               <p className="text-[10px] text-white/40 mb-3">
-                Step-by-step animated walkthrough of the QKD protocol exchange.
+                Step-by-step animated walkthrough of the QKD protocol exchange with polarizer visuals.
               </p>
               <Button asChild className="w-full h-8 text-xs" variant="outline">
-                <a href="/qkd_demo.html" target="_blank" rel="noopener noreferrer">
+                <a href="/simulation">
                   <Play className="w-3 h-3 mr-1.5" />
-                  Launch Demo
+                  Launch Simulation
                   <ExternalLink className="w-2.5 h-2.5 ml-1.5" />
                 </a>
               </Button>

@@ -123,3 +123,68 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for QKD simulation */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translateY(-3px) translateX(2px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(0) translateX(4px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateY(3px) translateX(2px);
+    opacity: 0.6;
+  }
+}
+
+@keyframes wave-flow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100px);
+  }
+}
+
+@keyframes photon-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px currentColor, 0 0 16px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 16px currentColor, 0 0 32px currentColor;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+.animate-float-particle {
+  animation: float-particle 3s ease-in-out infinite;
+}
+
+.animate-wave-flow {
+  animation: wave-flow 2s linear infinite;
+}
+
+.animate-photon-glow {
+  animation: photon-glow 1s ease-in-out infinite;
+}
