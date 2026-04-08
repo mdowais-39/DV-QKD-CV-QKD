@@ -557,16 +557,16 @@ function QuantumChannel({
           <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/60 via-violet-400/80 to-green-400/60 h-0.5 top-1/2 -translate-y-1/2" />
         </div>
         
-        {/* Particle effect dots */}
+        {/* Particle effect dots - using deterministic positions to avoid hydration mismatch */}
         <div className="absolute inset-0">
-          {[...Array(8)].map((_, i) => (
+          {[35, 52, 41, 58, 47, 63, 38, 55].map((topPos, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 rounded-full bg-cyan-400/40"
+              className="absolute w-1 h-1 rounded-full bg-cyan-400/40 animate-pulse-slow"
               style={{
-                top: `${30 + Math.random() * 40}%`,
+                top: `${topPos}%`,
                 left: `${i * 12 + 5}%`,
-                animation: `pulse 2s ease-in-out ${i * 0.2}s infinite`,
+                animationDelay: `${i * 0.2}s`,
               }}
             />
           ))}
