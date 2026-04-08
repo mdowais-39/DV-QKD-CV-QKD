@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings2 } from "lucide-react";
 
 export interface SimulationParams {
@@ -11,7 +10,7 @@ export interface SimulationParams {
   NTh: number;
   sigma2Theta: number;
   VsqdB: number;
-  protocol: "BB84" | "6S" | "SqzHom" | "compare";
+  protocol: "BB84" | "6S" | "SqzHom" | "GG02" | "compare";
 }
 
 interface ParameterControlsProps {
@@ -19,130 +18,143 @@ interface ParameterControlsProps {
   onParamsChange: (params: SimulationParams) => void;
 }
 
-export function ParameterControls({ params, onParamsChange }: ParameterControlsProps) {
-  const updateParam = <K extends keyof SimulationParams>(
-    key: K,
-    value: SimulationParams[K]
-  ) => {
-    onParamsChange({ ...params, [key]: value });
-  };
+const PROTOCOLS: { value: SimulationParams["protocol"]; label: string; color: string }[] = [
+  { value: "BB84", label: "BB84", color: "#7dd3fc" },
+  { value: "6S", label: "6-State", color: "#60a5fa" },
+  { value: "SqzHom", label: "Sqz-Hom", color: "#fb923c" },
+  { value: "GG02", label: "GG02-Het", color: "#fbbf24" },
+  { value: "compare", label: "All", color: "#a78bfa" },
+];
 
-  const formatScientific = (value: number): string => {
-    if (value === 0) return "0";
-    const exp = Math.floor(Math.log10(value));
-    return `10^${exp}`;
-  };
+function formatLog(v: number): string {
+  if (v <= 0) return "0";
+  const e = Math.round(Math.log10(v));
+  return `10^${e}`;
+}
+
+export function ParameterControls({ params, onParamsChange }: ParameterControlsProps) {
+  const update = <K extends keyof SimulationParams>(key: K, value: SimulationParams[K]) =>
+    onParamsChange({ ...params, [key]: value });
 
   return (
-    <Card className="bg-card border-border">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Settings2 className="w-4 h-4 text-primary" />
+    <Card className="bg-[#080c14] border-white/10">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm text-white">
+          <Settings2 className="w-4 h-4 text-cyan-400" />
           Channel Parameters
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Protocol Selection */}
+      <CardContent className="space-y-5">
+        {/* Protocol selection */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Protocol</Label>
-          <Tabs
-            value={params.protocol}
-            onValueChange={(v) => updateParam("protocol", v as SimulationParams["protocol"])}
-          >
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="BB84" className="text-xs">BB84</TabsTrigger>
-              <TabsTrigger value="6S" className="text-xs">Six-State</TabsTrigger>
-              <TabsTrigger value="SqzHom" className="text-xs">Sqz-Hom</TabsTrigger>
-              <TabsTrigger value="compare" className="text-xs">Compare</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <Label className="text-[10px] uppercase tracking-widest text-white/40">Protocol</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {PROTOCOLS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => update("protocol", p.value)}
+                className={`rounded-md px-2 py-1.5 text-[11px] font-medium border transition-all duration-150 ${
+                  params.protocol === p.value
+                    ? "border-transparent text-black"
+                    : "border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 bg-transparent"
+                }`}
+                style={
+                  params.protocol === p.value
+                    ? { backgroundColor: p.color }
+                    : {}
+                }
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Channel Loss */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Channel Loss</Label>
-            <span className="text-xs font-mono text-primary">
-              {params.lossdB.toFixed(1)} dB ({(params.lossdB / 0.2).toFixed(0)} km)
-            </span>
-          </div>
-          <Slider
-            value={[params.lossdB]}
-            onValueChange={([v]) => updateParam("lossdB", v)}
-            min={0}
-            max={50}
-            step={0.5}
-            className="w-full"
-          />
-        </div>
+        <SliderRow
+          label="Channel Loss"
+          value={params.lossdB}
+          display={`${params.lossdB.toFixed(1)} dB (${(params.lossdB / 0.2).toFixed(0)} km)`}
+          min={0} max={50} step={0.5}
+          onChange={(v) => update("lossdB", v)}
+        />
 
         {/* Thermal Noise */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              Thermal Noise N<sub>Th</sub>
-            </Label>
-            <span className="text-xs font-mono text-primary">
-              {formatScientific(params.NTh)}
-            </span>
-          </div>
-          <Slider
-            value={[Math.log10(params.NTh)]}
-            onValueChange={([v]) => updateParam("NTh", Math.pow(10, v))}
-            min={-8}
-            max={-1}
-            step={0.5}
-            className="w-full"
-          />
-        </div>
+        <SliderRow
+          label={<>Thermal Noise N<sub>Th</sub></>}
+          value={Math.log10(params.NTh)}
+          display={formatLog(params.NTh)}
+          min={-8} max={-1} step={0.5}
+          onChange={(v) => update("NTh", Math.pow(10, v))}
+          mono
+        />
 
         {/* Phase Noise */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">
-              Phase Noise sigma_theta^2
-            </Label>
-            <span className="text-xs font-mono text-primary">
-              {formatScientific(params.sigma2Theta)}
-            </span>
-          </div>
-          <Slider
-            value={[Math.log10(params.sigma2Theta)]}
-            onValueChange={([v]) => updateParam("sigma2Theta", Math.pow(10, v))}
-            min={-8}
-            max={0}
-            step={0.5}
-            className="w-full"
-          />
-        </div>
+        <SliderRow
+          label={<>Phase Noise σ²<sub>θ</sub></>}
+          value={Math.log10(params.sigma2Theta)}
+          display={formatLog(params.sigma2Theta)}
+          min={-8} max={0} step={0.5}
+          onChange={(v) => update("sigma2Theta", Math.pow(10, v))}
+          mono
+        />
 
-        {/* Squeezing Level (only for CV-QKD) */}
+        {/* Squeezing — shown when CV protocol selected */}
         {(params.protocol === "SqzHom" || params.protocol === "compare") && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Squeezing Level</Label>
-              <span className="text-xs font-mono text-primary">
-                {params.VsqdB} dB
-              </span>
-            </div>
-            <Slider
-              value={[params.VsqdB]}
-              onValueChange={([v]) => updateParam("VsqdB", v)}
-              min={0}
-              max={20}
-              step={1}
-              className="w-full"
-            />
-          </div>
+          <SliderRow
+            label="Squeezing Level"
+            value={params.VsqdB}
+            display={`${params.VsqdB} dB`}
+            min={0} max={20} step={1}
+            onChange={(v) => update("VsqdB", v)}
+          />
         )}
 
-        {/* Info Box */}
-        <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-          <p><strong>BB84:</strong> Two-basis protocol (Z, X)</p>
-          <p><strong>Six-State:</strong> Three-basis DV-QKD (Z, X, Y)</p>
-          <p><strong>Sqz-Hom:</strong> Squeezed-state CV-QKD with homodyne</p>
+        {/* Quick protocol guide */}
+        <div className="rounded-lg bg-white/5 p-3 space-y-1.5 text-[10px] text-white/40">
+          <p><span className="text-[#7dd3fc]">BB84</span> — 2-basis DV, QBER &lt; 11%</p>
+          <p><span className="text-[#60a5fa]">Six-State</span> — 3-basis DV, QBER &lt; 12.6%</p>
+          <p><span className="text-[#fb923c]">Sqz-Hom</span> — Squeezed CV, homodyne</p>
+          <p><span className="text-[#fbbf24]">GG02-Het</span> — Coherent CV, heterodyne</p>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function SliderRow({
+  label,
+  value,
+  display,
+  min,
+  max,
+  step,
+  onChange,
+  mono = false,
+}: {
+  label: React.ReactNode;
+  value: number;
+  display: string;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  mono?: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-[10px] text-white/50">{label}</Label>
+        <span className={`text-[10px] text-cyan-400 ${mono ? "font-mono" : ""}`}>{display}</span>
+      </div>
+      <Slider
+        value={[value]}
+        onValueChange={([v]) => onChange(v)}
+        min={min}
+        max={max}
+        step={step}
+        className="w-full"
+      />
+    </div>
   );
 }
