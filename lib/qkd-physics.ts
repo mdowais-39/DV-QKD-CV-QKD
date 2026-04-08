@@ -531,11 +531,15 @@ export const K0_PANELS = [
 ] as const;
 
 // Protocol colors (consistent across all figures)
+// Using high-contrast, colorblind-friendly palette
 export const PROTOCOL_COLORS = {
-  BB84: '#7dd3fc',       // sky blue
-  SixState: '#60a5fa',   // light blue
-  SqzHom: '#fb923c',     // orange
-  GG02Het: '#fbbf24',    // amber
-  PLOBUpper: '#ef4444',  // red
-  PLOBLower: '#22c55e',  // green
+  BB84: '#7dd3fc',       // sky blue - DV
+  SixState: '#60a5fa',   // light blue - DV (primary DV comparison)
+  SqzHom: '#fb923c',     // orange - CV (primary CV comparison)
+  GG02Het: '#fbbf24',    // amber - CV
+  PLOBUpper: '#ef4444',  // red - upper bound
+  PLOBLower: '#22c55e',  // green - lower bound
 } as const;
+
+// Type exports for external use
+export type { DataPoint, NormDataPoint, HeatCell, PhaseNoiseCell, LossToleranceCell };
